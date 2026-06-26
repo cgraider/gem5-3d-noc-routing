@@ -1,0 +1,44 @@
+{
+  "_comment": "Mock data for all simulation plots. Replace values with actual gem5 simulation results. 'proposed' = 3D-DeepNR With Improved State (proposed method).",
+
+  "latency_transpose": {
+    "_description": "Average Packet Latency under Transpose Traffic (Cycles)",
+    "injection_rates": [0.02, 0.04, 0.06, 0.08, 0.10, 0.16, 0.18, 0.20],
+    "XYZ":       [6600, 6450, 9400, 11200, 14000, 14750, 15600, 15900],
+    "CAQR":      [6400, 6450, 6700, 10850, 12000, 13700, 14250, 15400],
+    "3D-DeepNR": [6600, 6250, 6150,  9900,  9900, 13000, 14450, 15000],
+    "proposed":  [6400, 4500, 6400,  9400,  9200, 12100, 12500, 14450]
+  },
+
+  "latency_uniform": {
+    "_description": "Average Packet Latency under Uniform Traffic (Cycles)",
+    "injection_rates": [0.02, 0.04, 0.06, 0.08, 0.10, 0.16, 0.18],
+    "XYZ":       [6700, 6750, 7350, 11000, 13000, 14500, 15950],
+    "CAQR":      [6500, 6500, 6800, 10800, 11000, 13000, 15000],
+    "3D-DeepNR": [6600, 5000, 6600,  9900,  9900, 13000, 14450],
+    "proposed":  [6450, 4300, 6450,  9200,  8350, 13000, 14350]
+  },
+
+  "throughput_uniform": {
+    "_description": "Throughput under Uniform Traffic (%)",
+    "injection_rates": [0.02, 0.04, 0.06, 0.08, 0.10, 0.16, 0.18],
+    "XYZ":       [13.0,  8.0, 5.0, 4.0, 4.0, 4.0, 3.0],
+    "CAQR":      [13.0,  9.0, 7.0, 7.0, 7.0, 5.0, 5.0],
+    "3D-DeepNR": [14.0,  9.0, 8.0, 6.0, 6.0, 5.0, 6.0],
+    "proposed":  [15.0, 10.0, 9.0, 7.0, 7.0, 7.0, 7.0]
+  },
+
+  "training_loss": {
+    "_description": "Training Loss (log scale) vs Training Step",
+    "steps":     [0, 1000, 2500, 5000, 10000, 15000, 20000],
+    "3D-DeepNR": [500.0, 50.0, 7.0, 2.5, 1.1, 0.9, 0.8],
+    "proposed":  [700.0, 20.0, 3.0, 1.2, 0.8, 0.7, 0.65]
+  },
+
+  "throughput_training": {
+    "_description": "Throughput (%) during Training (smoothed trend lines)",
+    "episodes":  [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+    "3D-DeepNR": [1.8, 4.0, 4.2, 4.8,  6.0,  7.8,  9.6, 10.0, 13.0, 13.8, 14.1],
+    "proposed":  [5.4, 7.0, 7.8, 9.8, 10.0, 11.0, 12.5, 13.5, 15.2, 15.8, 16.2]
+  }
+}

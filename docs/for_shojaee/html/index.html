@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>راهنمای پروژه — gem5 / مسیریابی NoC</title>
+
+<!-- فونت‌ها -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- هایلایت کد -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰ فهرست</button>
+
+<div class="layout">
+
+  <!-- ============================ سایدبار ============================ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">📘</div>
+      <div>
+        <h1>راهنمای پروژه</h1>
+        <span>gem5 · Ruby/Garnet · مسیریابی NoC</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="label">شروع</div>
+      <nav>
+        <a href="#intro" class="active"><span class="ico">🏠</span> معرفی و فهرست</a>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="label">۱ · مبانی</div>
+      <nav>
+        <a href="#basics"><span class="ico">🧱</span> مبانی gem5 و Garnet</a>
+        <a href="#sequence"><span class="ico">🎬</span> مسیرِ اجرای شبیه‌سازی</a>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="label">۲ · الگوریتم‌ها</div>
+      <nav>
+        <a href="#xyz"><span class="ico">🧭</span> XYZ</a>
+        <a href="#caqr"><span class="ico">🧠</span> CAQR</a>
+        <a href="#deepnr3d"><span class="ico">🤖</span> DeepNR3D</a>
+        <a href="#proposed"><span class="ico">⭐</span> Proposed</a>
+      </nav>
+    </div>
+
+    <div class="nav-group">
+      <div class="label">۳ · راه‌اندازی</div>
+      <nav>
+        <a href="#build"><span class="ico">🔨</span> ساخت (Build)</a>
+        <a href="#run"><span class="ico">▶️</span> اجرا و ارزیابی</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ============================ محتوا ============================ -->
+  <main class="content">
+
+    <div class="hero">
+      <h1>📘 راهنمای پروژه</h1>
+      <p>راهنمای فارسیِ مبانی، الگوریتم‌های مسیریابی و نحوهٔ ساخت و اجرای پروژه روی gem5.</p>
+      <div class="pills">
+        <span class="pill">gem5</span>
+        <span class="pill">Ruby / Garnet</span>
+        <span class="pill">C++ &amp; Python</span>
+        <span class="pill">یادگیری تقویتی</span>
+        <span class="pill">شبکه‌روی‌تراشه</span>
+      </div>
+    </div>
+
+    <div class="prose">
+
+      <!-- ==================== INTRO ==================== -->
+      <section id="intro">
+        <p>این راهنما فرض را بر این می‌گذارد که با ++C آشنایی مقدماتی دارید و مفهومِ شبکه‌روی‌تراشه (NoC) را تا حدی می‌شناسید، اما هنوز با gem5 و ساختارِ کدِ این پروژه آشنا نیستید. مطالب به ترتیبِ منطقی چیده شده‌اند: ابتدا مبانی، سپس الگوریتم‌ها، و در پایان نحوهٔ ساخت و اجرا.</p>
+
+        <div class="callout note">
+          <p class="c-title">🔵 نکته</p>
+          <p>این صفحه نسخهٔ فارسی و خلاصه است. مرجعِ دقیق و کاملِ انگلیسی در پوشه‌های <code>1-fundamentals</code>، <code>2-algorithms</code> و <code>3-howto</code> قرار دارد.</p>
+        </div>
+
+        <h2>📚 ساختار راهنما</h2>
+        <div class="cards">
+          <div class="card"><div class="num">۱</div><h4>مبانی</h4><p>معرفی gem5، مفهومِ فلیت و کانالِ مجازی، خط‌لولهٔ روتر و رابطهٔ شمارهٔ روتر با مختصات.</p></div>
+          <div class="card"><div class="num">۲</div><h4>الگوریتم‌ها</h4><p>شرحِ کدِ چهار الگوریتمِ مسیریابی، از سادهٔ XYZ تا روشِ پیشنهادی.</p></div>
+          <div class="card"><div class="num">۳</div><h4>ساخت و اجرا</h4><p>کامپایلِ پروژه، اجرای هر الگوریتم و فازِ ارزیابی و مقایسه.</p></div>
+        </div>
+
+        <h2>🎨 راهنمای کادرها</h2>
+        <div class="legend">
+          <div class="chip"><span class="dot" style="background:var(--note)"></span> 🔵 نکته — توضیحِ تکمیلی</div>
+          <div class="chip"><span class="dot" style="background:var(--tip)"></span> 🟢 ترفند — راهِ ساده‌تر</div>
+          <div class="chip"><span class="dot" style="background:var(--important)"></span> 🟣 مهم — نکتهٔ کلیدی</div>
+          <div class="chip"><span class="dot" style="background:var(--warning)"></span> 🔴 هشدار — اشتباهِ رایج</div>
+          <div class="chip"><span class="dot" style="background:var(--teach)"></span> 🔧 یادآوریِ فنی</div>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== BASICS ==================== -->
+      <section id="basics">
+        <h2>🧱 مبانی gem5 و Ruby و Garnet</h2>
+
+        <h3>gem5 چیست؟</h3>
+        <p>gem5 یک شبیه‌سازِ معماریِ کامپیوتر است؛ به‌جای اجرای برنامه روی سخت‌افزارِ واقعی، رفتارِ آن را شبیه‌سازی می‌کند تا بتوان آن را به‌دقت اندازه‌گیری و بررسی کرد.</p>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم</p>
+          <p>gem5 رویداد-محور است؛ یعنی هیچ بخشی در یک حلقهٔ دائمی اجرا نمی‌شود. هر مؤلفه برای زمانی مشخص یک رویداد ثبت می‌کند و در آن زمان، تابعِ <code>wakeup()</code> آن فراخوانی می‌شود. کلِ شبیه‌سازی، اجرای پشتِ‌سرِهمِ همین رویدادها روی یک خطِ زمانی است.</p>
+        </div>
+
+        <pre><code class="language-text">gem5  (موتورِ شبیه‌سازی، ++C)
+  └─ Ruby      ← مدلِ دقیقِ حافظه و شبکه
+       └─ Garnet   ← مدلِ شبکه‌روی‌تراشه (NoC) — کدِ این پروژه اینجاست
+            └─ Router → InputUnit / RoutingUnit / SwitchAllocator / CrossbarSwitch / OutputUnit</code></pre>
+
+        <h3>بسته، فلیت و کانالِ مجازی</h3>
+        <ul>
+          <li><b>بسته (Packet):</b> واحدِ منطقیِ داده که از مبدأ به مقصد ارسال می‌شود.</li>
+          <li><b>فلیت (Flit):</b> هر بسته به چند فلیت تقسیم می‌شود؛ یک فلیتِ سَر (HEAD) که مسیر و زمان‌ها را همراه دارد، چند فلیتِ بدنه (BODY) و یک فلیتِ دُم (TAIL) که پایانِ بسته را مشخص می‌کند.</li>
+          <li><b>کانالِ مجازی (VC):</b> هر لینکِ فیزیکی به چند صفِ بافرِ مستقل تقسیم می‌شود که از گیر کردنِ صف جلوگیری می‌کنند.</li>
+          <li><b>اعتبار (Credit):</b> نشان‌دهندهٔ فضای خالیِ بافر در سمتِ مقصد است. روتر تنها زمانی فلیت می‌فرستد که اعتبار داشته باشد.</li>
+        </ul>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم</p>
+          <p>تصمیمِ مسیریابی برای هر بسته یک‌بار و روی فلیتِ سَر گرفته می‌شود و همان پورتِ خروجی برای بقیهٔ فلیت‌های همان بسته به کار می‌رود. پس هر تصمیمِ مسیریابی معادلِ یک پرش (hop) است.</p>
+        </div>
+
+        <div class="callout tip">
+          <p class="c-title">🟢 ترفند</p>
+          <p>میزانِ اعتبار یا فضای خالیِ بافر، همان سیگنالِ شلوغی (congestion) است. هر چهار الگوریتمِ این پروژه به‌نوعی همین مقدار را می‌خوانند تا شلوغیِ هر جهت را تشخیص دهند.</p>
+        </div>
+
+        <h3>خط‌لولهٔ روتر (یک پرش)</h3>
+        <table>
+          <thead><tr><th>زیرواحد</th><th>وظیفه</th></tr></thead>
+          <tbody>
+            <tr><td>InputUnit</td><td>فلیتِ ورودی را از لینک می‌گیرد و در بافرِ کانالِ مجازی قرار می‌دهد.</td></tr>
+            <tr><td><b>RoutingUnit</b></td><td>پورتِ خروجی را تعیین می‌کند. کدِ مسیریابیِ این پروژه در همین زیرواحد است.</td></tr>
+            <tr><td>SwitchAllocator</td><td>تعیین می‌کند کدام فلیت در این سیکل از کراس‌بار عبور کند.</td></tr>
+            <tr><td>CrossbarSwitch</td><td>فلیتِ برنده را به پورتِ خروجی منتقل می‌کند.</td></tr>
+            <tr><td>OutputUnit</td><td>فلیت را روی لینک می‌فرستد و اعتبارها را مدیریت می‌کند.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>RoutingUnit و محلِ اتصالِ الگوریتم‌ها</h3>
+        <p>تابعِ <code>outportCompute()</code> شمارهٔ الگوریتم را از آرگومانِ <code>--routing-algorithm=N</code> می‌خواند و اجرای متناظر را انتخاب می‌کند:</p>
+        <pre><code class="language-cpp">switch (routing_algorithm) {
+case TABLE_:    outport = lookupRoutingTable(...);    break; // 0
+case XY_:       outport = outportComputeXY(...);       break; // 1
+case DEEPNR3D_: outport = outportComputeDeepNR3D(...); break; // 2
+case PROPOSED_: outport = outportComputeProposed(...); break; // 3
+case XYZ_:      outport = outportComputeXYZ(...);      break; // 4
+case CAQR_:     outport = outportComputeCAQR(...);     break; // 5
+}</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — enum و switch</div>
+          <div class="t-body">
+            <p>نام‌هایی مانندِ <code>TABLE_</code> و <code>XY_</code> مقادیرِ یک <code>enum</code> هستند؛ یعنی نام‌هایی برای اعدادِ ۰ تا ۵. دستورِ <code>switch</code> نیز بسته به مقدارِ متغیر، یکی از شاخه‌ها را اجرا می‌کند.</p>
+          </div>
+        </div>
+
+        <p>وظیفهٔ هر تابعِ مسیریابی روشن است: یک عدد بازمی‌گرداند که همان شمارهٔ پورتِ خروجی است. برای این کار از دو قراردادِ زیر استفاده می‌شود.</p>
+
+        <h3>نگاشتِ جهت به شمارهٔ پورت</h3>
+        <pre><code class="language-cpp">m_outports_dirn2idx["North"]  // شمارهٔ پورتِ خروجی به‌سمتِ همسایهٔ شمالی
+m_inports_dirn2idx["South"]   // شمارهٔ پورتِ ورودی‌ای که فلیت از آن وارد شده</code></pre>
+        <p>شش جهتِ سه‌بعدی عبارت‌اند از: <code>North, East, South, West, Up, Down</code>. جهت‌های <code>Up</code> و <code>Down</code> همان لینک‌های عمودیِ TSV بینِ لایه‌ها هستند.</p>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — std::map</div>
+          <div class="t-body">
+            <p><code>std::map&lt;Key, Value&gt;</code> یک ساختارِ کلید-مقدار (دیکشنری) است؛ با یک کلید مانندِ <code>"North"</code> (یک string) مقدارِ متناظر (مثلاً شمارهٔ پورت) را برمی‌گرداند.</p>
+          </div>
+        </div>
+
+        <h3>رابطهٔ شمارهٔ روتر با مختصات (x, y, z)</h3>
+        <pre><code class="language-cpp">id = z * (rows * cols) + y * cols + x
+
+z = id / (rows*cols)
+y = (id % (rows*cols)) / cols
+x = (id % (rows*cols)) % cols</code></pre>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم</p>
+          <p>این رابطه در هر چهار الگوریتم به کار می‌رود و پلِ میانِ شمارهٔ خطیِ روتر و هندسهٔ شبکه است (محاسبهٔ فاصلهٔ منهتن، تشخیصِ لبه‌ها و انتخابِ جهتِ نزدیک‌شونده به مقصد).</p>
+        </div>
+        <div class="callout warning">
+          <p class="c-title">🔴 هشدار</p>
+          <p>خطا در این رابطه باعثِ مسیریابیِ نادرستِ همهٔ الگوریتم‌ها می‌شود؛ پس باید با دقت رعایت شود.</p>
+        </div>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — عملگرهای / و %</div>
+          <div class="t-body">
+            <p>روی اعدادِ صحیح، <code>/</code> تقسیمِ صحیح است (باقی‌مانده حذف می‌شود) و <code>%</code> باقی‌ماندهٔ تقسیم را می‌دهد. برای مثال با <code>cols=4</code> و <code>id=6</code> داریم: <code>x = 6 % 4 = 2</code> و <code>y = 6 / 4 = 1</code>.</p>
+          </div>
+        </div>
+
+        <h3>خواندنِ شلوغی از OutputUnit</h3>
+        <pre><code class="language-cpp">// فضای خالیِ بافر (بیشتر = خلوت‌تر) — در DeepNR3D و Proposed استفاده می‌شود:
+m_router->getOutputUnit(port)->get_credit_count(vc);
+
+// عمقِ صفِ خروجی (بیشتر = شلوغ‌تر) — در CAQR استفاده می‌شود:
+m_router->getOutputUnit(port)->getOutQueue()->getSize();</code></pre>
+
+        <h3>قانونِ اندازهٔ شبکه</h3>
+        <div class="callout important">
+          <p class="c-title">🟣 مهم</p>
+          <p><code>num-cpus == num-dirs == rows × cols × layers</code>. برای مثال شبکهٔ ۴×۴×۲ برابرِ ۳۲ گره است.</p>
+        </div>
+
+        <h3>حلقهٔ یادگیریِ تقویتی (تنها در DeepNR3D و Proposed)</h3>
+        <pre><code class="language-text">RoutingUnit در gem5 (++C، سمتِ کلاینت ZMQ)  ──حالت──►  agent.py (پایتون، سمتِ سرور)
+                                            ◄──اکشن──</code></pre>
+        <div class="callout note">
+          <p class="c-title">🔵 نکته</p>
+          <p>فهمِ سمتِ gem5 نیازی به دانشِ یادگیریِ ماشین ندارد؛ این بخش تنها حالت را ارسال و پورتِ بازگشتی را اعمال می‌کند. کلِ منطقِ یادگیری در عاملِ پایتونی قرار دارد.</p>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== SEQUENCE ==================== -->
+      <section id="sequence">
+        <h2>🎬 مسیرِ اجرای شبیه‌سازی</h2>
+        <p>این بخش ترتیبِ رویدادها را از تزریقِ یک بسته تا رسیدنِ آن به مقصد دنبال می‌کند.</p>
+
+        <pre><code class="language-text">اسکریپتِ اجرا (shell)
+  └─ باینریِ gem5 (موتورِ ++C)
+       └─ اسکریپتِ کانفیگ (پایتون)
+            └─ شبکهٔ Ruby / Garnet (++C)
+                 └─ RoutingUnit ──ZMQ──► agent.py (تنها در DeepNR3D و Proposed)
+  └─ آمار در stats.txt نوشته می‌شود</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — ارتباطِ پایتون و ++C</div>
+          <div class="t-body">
+            <p>پایتون و ++C در یک پروسهٔ مشترک اجرا می‌شوند. به همین دلیل کدِ ++C می‌تواند با <code>std::getenv("GARNET_ROUTING_ALGORITHM")</code> همان متغیرِ محیطی‌ای را بخواند که اسکریپتِ پایتون با <code>os.environ[...]</code> تنظیم کرده است. این روشِ سادهٔ تبادلِ اطلاعات میانِ دو زبان است.</p>
+          </div>
+        </div>
+
+        <h3>تصمیمِ مسیریابی</h3>
+        <p>در الگوریتم‌های یادگیرنده، در هر پرش این مراحل اجرا می‌شود:</p>
+        <pre><code class="language-text">۱. دریافتِ پاداشِ پرشِ قبلی          DeepNR::get_reward(packet_id)
+۲. ساختِ بردارِ حالت                 [one-hot روترِ فعلی و مقصد، فاصله، وضعیتِ بافرها]
+۳. تعیینِ اکشن‌های مجاز               (جهتِ خارج از لبه یا با بافرِ پر، مجاز نیست)
+۴. ارسالِ حالت با JSON (ZMQ)          → agent.py
+۵. انتظار و دریافتِ اکشن              ← agent.py
+۶. اعتبارسنجیِ اکشن                  در صورتِ نامعتبر بودن → پایانِ اپیزود
+۷. نگاشتِ اکشن به پورتِ خروجی و بازگرداندن</code></pre>
+
+        <h3>ذخیرهٔ پاداش (OutputUnit.cc)</h3>
+        <pre><code class="language-cpp">float reward = 1.0f / (queuing_cycles + 1.0f);  // تأخیرِ کم → پاداشِ نزدیک به ۱
+DeepNR::store_reward(packet_id, reward, queuing_cycles);</code></pre>
+        <div class="callout note">
+          <p class="c-title">🔵 نکته</p>
+          <p>پاداش با یک پرش تأخیر محاسبه می‌شود، زیرا نتیجهٔ یک اکشن تا رسیدنِ بسته به روترِ بعدی مشخص نمی‌شود. همین الگو در CAQR نیز وجود دارد.</p>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== XYZ ==================== -->
+      <section id="xyz">
+        <h2>🧭 الگوریتم XYZ <span class="algo-id">۴</span></h2>
+        <p>XYZ یک مسیریابیِ قطعیِ سه‌بعدی است؛ بدونِ عامل، بدونِ یادگیری و بدونِ حالت، تنها یک قاعدهٔ ثابت. توپولوژیِ آن <code>Mesh_3D</code> است.</p>
+
+        <div class="callout tip">
+          <p class="c-title">🟢 ترفند</p>
+          <p>XYZ نقشِ خطِ مبنا (baseline) را دارد؛ مرجعی که الگوریتم‌های پیچیده‌تر با آن مقایسه می‌شوند. ساده است اما همیشه درست کار می‌کند.</p>
+        </div>
+
+        <h3>ایدهٔ اصلی</h3>
+        <p>ابعاد همیشه به ترتیبِ ثابت حل می‌شوند: ابتدا X، سپس Y و در پایان Z. چون همهٔ بسته‌ها همین ترتیب را رعایت می‌کنند، شبکه بدونِ بن‌بست (deadlock-free) باقی می‌ماند.</p>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم</p>
+          <p>ضعفِ اصلیِ XYZ این است که شلوغی را در نظر نمی‌گیرد. همین محدودیت، فضایی است که CAQR و الگوریتم‌های یادگیرنده برای بهبودِ آن طراحی شده‌اند.</p>
+        </div>
+
+        <h3>بخشِ کلیدیِ کد</h3>
+        <pre><code class="language-cpp">if      (dest_x &gt; my_x) outport_dirn = "East";
+else if (dest_x &lt; my_x) outport_dirn = "West";
+else if (dest_y &gt; my_y) outport_dirn = "South";
+else if (dest_y &lt; my_y) outport_dirn = "North";
+else if (dest_z &gt; my_z) outport_dirn = "Up";    // ‎+Z با TSV
+else if (dest_z &lt; my_z) outport_dirn = "Down";  // ‎-Z با TSV
+else  panic("XYZ: مبدأ برابرِ مقصد");
+
+return m_outports_dirn2idx[outport_dirn];</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — زنجیرهٔ if / else if</div>
+          <div class="t-body">
+            <p>این زنجیره خودِ «ترتیبِ ابعاد» را پیاده می‌کند؛ با برقرار شدنِ یک شرط، بقیه نادیده گرفته می‌شوند. تا زمانی که X هم‌تراز نشده، نوبت به Y نمی‌رسد و تا Y هم‌تراز نشده، نوبت به Z نمی‌رسد. عبارتِ <code>panic(...)</code> نیز حالتی را علامت می‌زند که نباید رخ دهد و در صورتِ وقوع، اجرا را با خطا متوقف می‌کند.</p>
+          </div>
+        </div>
+
+        <h3>اجرا</h3>
+        <pre><code class="language-bash">./build/ALL/gem5.opt configs/example/garnet_synth_traffic.py \
+    --network=garnet --num-cpus=32 --num-dirs=32 \
+    --topology=Mesh_3D --mesh-rows=4 --mesh-layers=2 --vcs-per-vnet=2 \
+    --routing-algorithm=4 --link-latency=1 --router-latency=1 \
+    --sim-cycles=1000000 --synthetic=uniform_random --injectionrate=0.1</code></pre>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== CAQR ==================== -->
+      <section id="caqr">
+        <h2>🧠 الگوریتم CAQR <span class="algo-id">۵</span></h2>
+        <p>CAQR یا «مسیریابیِ Qِ آگاه از شلوغی»، یک یادگیریِ تقویتیِ جدولی روی شبکهٔ دوبعدی (<code>Mesh_XY</code>) است. این الگوریتم به‌طورِ کامل در ++C پیاده شده و به عاملِ پایتونی نیاز ندارد.</p>
+
+        <h3>ایدهٔ اصلی</h3>
+        <p>یک جدولِ Q نگه‌داری می‌شود که به این پرسش پاسخ می‌دهد: «از روترِ <code>x</code> و با مقصدِ <code>d</code>، حرکت از جهتِ <code>dir</code> چه هزینه‌ای دارد؟». هرچه مقدارِ Q کمتر باشد، آن جهت بهتر است و روتر همواره جهتِ با کمترین Q را انتخاب می‌کند.</p>
+
+        <pre><code class="language-cpp">namespace CAQR {
+// qtable[router][dest][dir] = مقدارِ Q
+static std::map&lt;int, std::map&lt;int, std::map&lt;std::string, double&gt;&gt;&gt; qtable;
+static const int    TRAIN_STEPS = 50;  // طولِ فازِ اکتشاف
+static const double ALPHA = 0.5;       // نرخِ یادگیری α
+static const double GAMMA = 0.7;       // نرخِ تخفیف γ
+static const double EPSILON = 0.5;     // احتمالِ اکتشاف ε
+}</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — static و map های تو‌در‌تو</div>
+          <div class="t-body">
+            <p>کلیدواژهٔ <code>static</code> سبب می‌شود متغیر میانِ فراخوانی‌های متوالیِ تابع پایدار بماند و میانِ همهٔ روترها مشترک باشد؛ همین حافظه است که یادگیری را ممکن می‌کند. بدونِ آن، جدول در هر فراخوانی از نو خالی می‌شد.</p>
+            <p><code>std::map&lt;int, std::map&lt;int, std::map&lt;string, double&gt;&gt;&gt;</code> یک ساختارِ سه‌سطحی است؛ برای نمونه <code>qtable[5][20]["East"]</code> هزینهٔ حرکت از روترِ ۵ به‌سمتِ مقصدِ ۲۰ از جهتِ شرق را نگه می‌دارد.</p>
+          </div>
+        </div>
+
+        <h3>انتخابِ جهت: از اکتشاف تا بهره‌برداری</h3>
+        <pre><code class="language-cpp">bool exploring = (CAQR::packet_count &lt; CAQR::TRAIN_STEPS) &amp;&amp;
+                 ((double)rand() / RAND_MAX &lt; CAQR::EPSILON);
+
+if (exploring || feasible.size() == 1) {
+    chosen_dirn = feasible[rand() % feasible.size()];   // انتخابِ تصادفی
+} else {
+    chosen_dirn  = feasible[0];                          // انتخابِ کمترین Q
+    double min_q = CAQR::getQ(my_id, dest_id, feasible[0]);
+    for (size_t i = 1; i &lt; feasible.size(); ++i) {
+        double q = CAQR::getQ(my_id, dest_id, feasible[i]);
+        if (q &lt; min_q) { min_q = q; chosen_dirn = feasible[i]; }
+    }
+}</code></pre>
+
+        <div class="callout tip">
+          <p class="c-title">🟢 ترفند</p>
+          <p>این همان موازنهٔ شناخته‌شدهٔ اکتشاف در برابرِ بهره‌برداری است: در ابتدا مسیرهای تازه آزموده می‌شوند تا جدول شکل بگیرد و پس از آن، بهترین مسیرِ آموخته‌شده به کار می‌رود.</p>
+        </div>
+
+        <h3>به‌روزرسانیِ Q (رابطهٔ مقاله)</h3>
+        <pre><code class="language-text">Q_x(y,d)_new = Q_x(y,d)_old + α · ( γ · Q_y(z,d) + q_y + δ_xy − Q_x(y,d)_old )</code></pre>
+        <table>
+          <thead><tr><th>نماد</th><th>توضیح</th></tr></thead>
+          <tbody>
+            <tr><td><code>q_y</code></td><td>سیگنالِ شلوغی؛ عمقِ صفِ خروجی در روترِ بعدی (همان وجهِ «آگاه از شلوغی»)</td></tr>
+            <tr><td><code>δ_xy</code></td><td>تأخیرِ ثابتِ لینک، برابرِ ۱ سیکل</td></tr>
+            <tr><td><code>α, γ</code></td><td>نرخِ یادگیری ۰٫۵ و نرخِ تخفیف ۰٫۷</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم — چرا یک پرش تأخیر؟</p>
+          <p>هزینهٔ واقعیِ یک پرش تا رسیدنِ بسته به روترِ بعدی مشخص نیست، چون باید عمقِ صفِ آنجا خوانده شود. به همین دلیل هر روتر مقدارِ Qِ روترِ قبلی را بر اساسِ شلوغیِ محلیِ خود به‌روزرسانی می‌کند.</p>
+        </div>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — تفسیرِ رابطه</div>
+          <div class="t-body">
+            <p>ساختارِ <code>Q_new = Q_old + α · (هدف − Q_old)</code> یعنی مقدارِ قبلیِ Q به‌اندازهٔ ضریبِ α (اینجا نصف) به‌سمتِ یک مقدارِ هدف نزدیک می‌شود. این همان قاعدهٔ کلاسیکِ Q-learning است که با افزودنِ ترمِ شلوغیِ <code>q_y</code> به آگاهی از شلوغی مجهز شده است.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== DEEPNR3D ==================== -->
+      <section id="deepnr3d">
+        <h2>🤖 الگوریتم DeepNR3D <span class="algo-id">۲</span></h2>
+        <p>DeepNR3D یک شبکهٔ Qِ عمیق (DQN) است که مسیریابی را می‌آموزد. توپولوژیِ آن <code>Mesh_3D</code> و پورتِ ZMQِ آن ۵۵۵۵ است.</p>
+
+        <div class="callout note">
+          <p class="c-title">🔵 نکته</p>
+          <p>تفاوتِ اصلی با CAQR این است که اینجا به‌جای جدول، یک شبکهٔ عصبی از روی بردارِ حالت برای هر جهت یک مقدارِ Q پیش‌بینی می‌کند و این شبکه در یک برنامهٔ پایتونیِ جداگانه اجرا می‌شود.</p>
+        </div>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — ZMQ و الگوی REQ/REP</div>
+          <div class="t-body">
+            <p>ZMQ کتابخانه‌ای برای پیام‌رسانی میانِ دو برنامه است. در الگوی درخواست/پاسخ، یک طرف درخواست می‌فرستد و منتظر می‌ماند و طرفِ دیگر پاسخ می‌دهد. در اینجا gem5 نقشِ کلاینت و عاملِ پایتونی نقشِ سرور را دارد؛ چون gem5 منتظر می‌ماند، شبیه‌سازی تا دریافتِ پاسخ متوقف می‌شود.</p>
+          </div>
+        </div>
+
+        <h3>بردارِ حالت (طول = 2·num_routers + 8)</h3>
+        <table>
+          <thead><tr><th>ویژگی</th><th>توضیح</th></tr></thead>
+          <tbody>
+            <tr><td>f1, f2</td><td>روترِ فعلی و مقصد به‌صورتِ one-hot</td></tr>
+            <tr><td>f3</td><td>تعدادِ پرش‌های طی‌شده (نرمال‌شده)</td></tr>
+            <tr><td>f4</td><td>فاصلهٔ منهتنِ سه‌بعدی تا مقصد</td></tr>
+            <tr><td>f5</td><td>فضای خالیِ بافر در شش جهت</td></tr>
+          </tbody>
+        </table>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — رمزگذاریِ one-hot</div>
+          <div class="t-body">
+            <p>در رمزگذاریِ one-hot تنها یک درایهٔ بردار برابرِ ۱ و بقیه ۰ است؛ برای نمونه در شبکه‌ای با ۴ روتر، اگر روترِ فعلی شمارهٔ ۲ باشد بردار برابرِ <code>[0, 0, 1, 0]</code> می‌شود. این روشِ متداولِ نمایشِ «کدام مورد از میانِ چند مورد» برای شبکهٔ عصبی است.</p>
+          </div>
+        </div>
+
+        <h3>ماسکِ اکشن‌های مجاز</h3>
+        <pre><code class="language-cpp">std::vector&lt;bool&gt; available_actions(6, true);
+if (my_y == 0)            available_actions[0] = false; // فاقدِ همسایهٔ شمالی (لبه)
+if (my_x == num_cols - 1) available_actions[1] = false; // فاقدِ همسایهٔ شرقی
+// در صورتِ پر بودنِ بافرِ یک جهت نیز آن جهت غیرمجاز می‌شود</code></pre>
+
+        <div class="callout warning">
+          <p class="c-title">🔴 هشدار</p>
+          <p>در صورتِ دریافتِ اکشنِ نامعتبر، gem5 به‌عمد اپیزود را با <code>fatal()</code> پایان می‌دهد. این رفتار خطا نیست؛ علامتی برای حلقهٔ آموزش است تا اپیزودِ بعدی را آغاز کند.</p>
+        </div>
+
+        <h3>سمتِ پایتون — معماریِ شبکهٔ عصبی</h3>
+        <pre><code class="language-text">state_size → 64 (فشرده‌سازی) → ReLU
+64 → 256 → 128 → 64 → action_size (۶ خروجی؛ مقدارِ Q برای هر جهت)</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — epsilon-greedy و بافرِ تجربه</div>
+          <div class="t-body">
+            <p>در سیاستِ epsilon-greedy با احتمالِ <code>epsilon</code> یک جهتِ تصادفیِ مجاز (اکتشاف) و در غیرِ این صورت جهتِ با بیشترین Q (بهره‌برداری) انتخاب می‌شود؛ مقدارِ <code>epsilon</code> به‌تدریج از ۰٫۹ به ۰٫۰۱ کاهش می‌یابد.</p>
+            <p>بافرِ تجربه (ReplayBuffer) چهارتایی‌های <code>(s, a, r, s', done)</code> را نگه می‌دارد و هنگامِ آموزش، یک دستهٔ تصادفی از آن انتخاب می‌شود تا همبستگیِ نمونه‌های متوالی، آموزش را منحرف نکند.</p>
+          </div>
+        </div>
+
+        <h3>اجرا (دو ترمینال)</h3>
+        <pre><code class="language-bash"># ترمینالِ ۱ — عامل (۳۲ روتر → state = 2*32+8 = 72)
+python3 deepnr_agent.py --port 5555 --state-size 72 --action-size 6 --fresh
+
+# ترمینالِ ۲ — gem5
+./build/ALL/gem5.opt configs/example/garnet_deepnr_traffic.py \
+    --network=garnet --num-cpus=32 --num-dirs=32 \
+    --topology=Mesh_3D --mesh-rows=4 --mesh-layers=2 --vcs-per-vnet=2 \
+    --routing-algorithm=2 --sim-cycles=100000 \
+    --synthetic=uniform_random --injectionrate=0.1</code></pre>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== PROPOSED ==================== -->
+      <section id="proposed">
+        <h2>⭐ روشِ پیشنهادی (Proposed) <span class="algo-id">۳</span></h2>
+        <p>Proposed پیشرفته‌ترین الگوریتمِ پروژه است. ساختارِ آن عمدتاً مشابهِ DeepNR3D است و تنها در چند مورد بهبود یافته. پورتِ ZMQِ آن ۵۵۵۶ است.</p>
+
+        <h3>تفاوت‌ها با DeepNR3D</h3>
+        <table>
+          <thead><tr><th>مورد</th><th>DeepNR3D</th><th>Proposed</th></tr></thead>
+          <tbody>
+            <tr><td>اندازهٔ حالت</td><td>2N + 8 (۵ ویژگی)</td><td><b>2N + 28 (۱۰ ویژگی)</b></td></tr>
+            <tr><td>تابعِ خطا</td><td>MSE</td><td><b>Huber</b></td></tr>
+            <tr><td>بافرِ تجربه</td><td>۲۰۰</td><td><b>۱۰٬۰۰۰</b></td></tr>
+            <tr><td>فازِ گرم‌کردن</td><td>ندارد</td><td><b>۱۰۰۰ گام</b></td></tr>
+          </tbody>
+        </table>
+
+        <h3>افزودهٔ اصلی: حافظهٔ EMA برای شلوغی</h3>
+        <pre><code class="language-cpp">static std::map&lt;int, std::array&lt;float, 6&gt;&gt; ema_occ;  // برای هر روتر، شش جهت
+static const float EMA_ALPHA = 0.1f;
+
+ema_occ[my_id][d] = EMA_ALPHA * buf_occ[d] + (1.0f - EMA_ALPHA) * ema_occ[my_id][d];</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — میانگینِ متحرکِ نمایی (EMA)</div>
+          <div class="t-body">
+            <p>EMA یک میانگینِ هموار است که سابقهٔ مقادیر را نیز در نظر می‌گیرد. با <code>α=0.1</code> هر اندازه‌گیریِ تازه تنها ۱۰٪ در نتیجه اثر می‌گذارد، در نتیجه تخمینی آرام و کم‌نوسان از شلوغی به دست می‌آید؛ این به عامل دیدی تاریخی از شلوغیِ هر جهت می‌دهد، نه صرفاً مقدارِ لحظه‌ای.</p>
+          </div>
+        </div>
+
+        <h3>نگاشتِ اکشن با جدولِ delta</h3>
+        <pre><code class="language-cpp">static const int delta[6][3] = {{0,-1,0},{1,0,0},{0,1,0},{-1,0,0},{0,0,1},{0,0,-1}};
+int nx = my_x + delta[action][0];
+int ny = my_y + delta[action][1];
+int nz = my_z + delta[action][2];
+int next_id = nz * layer_size + ny * num_cols + nx;</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — کاربردِ جدولِ delta</div>
+          <div class="t-body">
+            <p>به‌جای زنجیرهٔ طولانیِ <code>if/else</code> برای شش جهت، یک جدولِ کوچک هر اکشن (۰ تا ۵) را به تغییرِ مختصاتِ <code>(dx, dy, dz)</code> نگاشت می‌کند. نتیجه کوتاه‌تر، خواناتر و کم‌خطاتر است.</p>
+          </div>
+        </div>
+
+        <h3>تابعِ خطای Huber به‌جای MSE</h3>
+        <pre><code class="language-python">loss = nn.functional.smooth_l1_loss(current_q.squeeze(), target_q)</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — MSE در برابرِ Huber</div>
+          <div class="t-body">
+            <p>تابعِ MSE خطاهای بزرگ را با توانِ دو جریمه می‌کند و یک پاداشِ پرت می‌تواند آموزش را ناپایدار کند. تابعِ Huber برای خطاهای کوچک مانندِ MSE و برای خطاهای بزرگ به‌صورتِ خطی عمل می‌کند؛ از این رو در شبکه‌ای با پاداش‌های پرنوسان، آموزش را پایدارتر می‌سازد.</p>
+          </div>
+        </div>
+
+        <div class="callout important">
+          <p class="c-title">🟣 جمع‌بندی</p>
+          <p>Proposed را می‌توان همان DeepNR3D دانست که با بردارِ حالتِ غنی‌تر (شاملِ دیدِ تاریخی از شلوغی) و آموزشِ پایدارتر تقویت شده است.</p>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== BUILD ==================== -->
+      <section id="build">
+        <h2>🔨 ساختِ gem5</h2>
+
+        <div class="callout warning">
+          <p class="c-title">🔴 هشدارِ مهم</p>
+          <p>gem5 روی ویندوز ساخته و اجرا نمی‌شود؛ مسیرِ <code>v:\...</code> تنها یک درایوِ متصل (mount) است. همهٔ دستورهای ساخت و اجرا باید روی سرورِ لینوکس اجرا شوند.</p>
+        </div>
+
+        <pre><code class="language-bash"># فعال‌سازیِ محیط
+source ~/gem5-env/bin/activate
+cd ~/gem5_new/gem5/gem5
+
+# نسخهٔ بهینه (نسخهٔ معمولِ اجرا)
+scons build/ALL/gem5.opt -j$(nproc)
+
+# نسخهٔ دیباگ (کندتر، با پیام‌های خطای دقیق‌تر)
+scons build/ALL/gem5.debug -j$(nproc)</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — scons و ‎-j$(nproc)</div>
+          <div class="t-body">
+            <p>scons ابزارِ ساختِ gem5 است (مشابهِ make) و تنها فایل‌های تغییریافته را بازکامپایل می‌کند. گزینهٔ <code>-j$(nproc)</code> از همهٔ هسته‌های پردازنده استفاده می‌کند. ساختِ نخست بین ۲۰ تا ۶۰ دقیقه و ساخت‌های بعدی چند ثانیه طول می‌کشد.</p>
+          </div>
+        </div>
+
+        <div class="callout important">
+          <p class="c-title">🟣 مهم — وابستگیِ ZMQ</p>
+          <p>برای DeepNR3D و Proposed باید بستهٔ <code>libzmq3-dev</code> نصب باشد. در نبودِ آن، کامپایل موفق می‌شود اما این دو الگوریتم هنگامِ اجرا <code>fatal()</code> می‌دهند، چون کدشان درونِ <code>#ifdef USE_ZMQ</code> قرار دارد.</p>
+        </div>
+      </section>
+
+      <div class="section-sep"></div>
+
+      <!-- ==================== RUN ==================== -->
+      <section id="run">
+        <h2>▶️ اجرا و ارزیابی</h2>
+
+        <table>
+          <thead><tr><th>N</th><th>الگوریتم</th><th>نیاز به عامل</th></tr></thead>
+          <tbody>
+            <tr><td>۴</td><td>XYZ</td><td>ندارد</td></tr>
+            <tr><td>۵</td><td>CAQR</td><td>ندارد</td></tr>
+            <tr><td>۲</td><td>DeepNR3D</td><td>دارد (پورت ۵۵۵۵)</td></tr>
+            <tr><td>۳</td><td>Proposed</td><td>دارد (پورت ۵۵۵۶)</td></tr>
+          </tbody>
+        </table>
+
+        <h2>📊 فازِ ارزیابی و مقایسه</h2>
+
+        <h3>گامِ ۱ — آموزش یا بارگذاریِ عامل‌ها</h3>
+        <p>XYZ و CAQR از ابتدا درست کار می‌کنند، اما DeepNR3D و Proposed باید آموزش‌دیده باشند وگرنه نتایجشان معتبر نیست. برای ارزیابی، عامل در حالتِ eval اجرا می‌شود:</p>
+        <pre><code class="language-bash">python3 deepnr_agent.py --port 5555 --state-size 72 --action-size 6 \
+    --load-model deepnr_model.pth --eval-mode</code></pre>
+
+        <div class="teach">
+          <div class="t-head">🔧 یادآوریِ فنی — حالتِ eval</div>
+          <div class="t-body">
+            <p>در حالتِ ارزیابی، عامل دیگر آموزش نمی‌بیند و اکتشافِ تصادفی نمی‌کند، بلکه تنها از سیاستِ آموخته‌شده استفاده می‌کند. در نتیجه سیاست ثابت می‌ماند و مقایسه منصفانه خواهد بود.</p>
+          </div>
+        </div>
+
+        <h3>گامِ ۲ — اجرای جاروبِ کاملِ هر چهار الگوریتم</h3>
+        <pre><code class="language-bash">bash scripts/run_XYZ_CAQR.sh         # الگوریتم‌های ۴ و ۵ — فایل را بازنشانی می‌کند
+bash scripts/run_DeepNR_proposed.sh  # الگوریتم‌های ۲ و ۳ — به فایل می‌افزاید</code></pre>
+
+        <div class="callout warning">
+          <p class="c-title">🔴 هشدار — ترتیبِ اجرا مهم است</p>
+          <p>اسکریپتِ نخست فایلِ <code>garnet_results.json</code> را بازنشانی می‌کند و اسکریپتِ دوم به آن می‌افزاید. پس همیشه باید ابتدا <code>run_XYZ_CAQR.sh</code> اجرا شود؛ در غیرِ این صورت نتایج پاک می‌شوند.</p>
+        </div>
+
+        <h3>گامِ ۳ — تأیید و رسمِ نمودار</h3>
+        <pre><code class="language-bash">python3 scripts/verify_augmentation.py garnet_results.json
+python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plots</code></pre>
+        <p>اسکریپتِ <code>verify_augmentation.py</code> بررسی می‌کند که ترتیبِ موردِانتظارِ تأخیر برقرار باشد: <b>proposed &lt; DeepNR3D &lt; CAQR &lt; XYZ</b> (تأخیرِ کمتر بهتر است).</p>
+
+        <h3>گامِ ۴ — معیارهای کلیدی</h3>
+        <table>
+          <thead><tr><th>معیار</th><th>توضیح</th></tr></thead>
+          <tbody>
+            <tr><td><code>average_packet_latency</code></td><td>تأخیرِ سرتاسری — کمتر بهتر است</td></tr>
+            <tr><td>received / injected</td><td>نرخِ تحویل — باید نزدیک به ۱۰۰٪ باشد</td></tr>
+            <tr><td><code>average_hops</code></td><td>طولِ مسیر — نزدیک به فاصلهٔ منهتن یعنی بهینه</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <p class="c-title">🟢 ترفند</p>
+          <p>برای یافتنِ یک مقدارِ مشخص در فایلِ آمار: <code>grep average_packet_latency m5out/stats.txt</code></p>
+        </div>
+      </section>
+
+    </div><!-- /prose -->
+
+    <footer class="page-foot">
+      نسخهٔ HTMLِ مستنداتِ <code>docs/for_shojaee</code> · مرجعِ دقیقِ انگلیسی در پوشه‌های کناری قرار دارد.
+    </footer>
+
+  </main>
+</div>
+
+<!-- highlight.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+
+  // هایلایتِ لینکِ فعالِ سایدبار بر اساسِ بخشِ در نمای کاربر
+  const links = [...document.querySelectorAll('.sidebar nav a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
+
+  document.querySelectorAll('.sidebar nav a').forEach(a =>
+    a.addEventListener('click', () => document.querySelector('.sidebar').classList.remove('open')));
+</script>
+</body>
+</html>
