@@ -19,10 +19,11 @@ GEM5=${GEM5:-./build/ALL/gem5.opt}
 CONFIG=configs/example/garnet_deepnr_traffic.py
 CYCLES=${CYCLES:-20000}
 
-# Mesh sizing (4x4x2 = 32 routers). state-size for DeepNR = 2*routers + 8.
-ROWS=${ROWS:-4}; COLS=${COLS:-4}; LAYERS=${LAYERS:-2}
+# Mesh sizing (4x4x3 = 48 routers). state-size for DeepNR = 2*routers + 8.
+ROWS=${ROWS:-4}; COLS=${COLS:-4}; LAYERS=${LAYERS:-3}
 ROUTERS=$((ROWS * COLS * LAYERS))
-NODES=$ROUTERS
+NODES=$ROUTERS          # num-cpus == router count (drives the mesh dimensions)
+NUM_DIRS=${NUM_DIRS:-16}  # must be a power of 2 for directory addr interleaving
 STATE_SIZE=$((2 * ROUTERS + 8))
 
 RESULTS_DIR=results
@@ -37,7 +38,7 @@ if [ ! -x "$GEM5" ]; then
     exit 1
 fi
 
-RATES="0.02 0.06 0.10 0.18"
+RATES="0.02 0.04 0.06 0.08 0.10 0.16 0.18 0.20"
 TRAFFIC="uniform_random transpose"
 
 AGENT_PID=""
@@ -74,7 +75,7 @@ sweep() {
             echo ">>> algo=$algo traffic=$tr rate=$r"
             "$GEM5" "$CONFIG" \
                 --network=garnet \
-                --num-cpus=$NODES --num-dirs=$NODES \
+                --num-cpus=$NODES --num-dirs=$NUM_DIRS \
                 --topology=Mesh_3D \
                 --mesh-rows=$ROWS --mesh-layers=$LAYERS \
                 --vcs-per-vnet=2 \

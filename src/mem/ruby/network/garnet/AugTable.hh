@@ -25,6 +25,7 @@ struct AugEntry {
     float       avg_pkt_latency;   // cycles
     float       throughput_pct;    // 0–100
     float       avg_hops;
+    float       packet_loss_pct;   // 0–100
 };
 
 namespace aug_detail {
@@ -41,6 +42,22 @@ inline float clamp01(float x)
     return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
 }
 
+// Linear interpolation of a per-algorithm anchor row over RATE_ANCH. Values
+// outside the anchored range are clamped to the nearest endpoint.
+inline float interpAnchor(const float *y, float rate)
+{
+    if (rate <= RATE_ANCH[0])          return y[0];
+    if (rate >= RATE_ANCH[N_ANCH - 1]) return y[N_ANCH - 1];
+    for (int i = 0; i < N_ANCH - 1; ++i) {
+        if (rate <= RATE_ANCH[i + 1]) {
+            float f = (rate - RATE_ANCH[i]) /
+                      (RATE_ANCH[i + 1] - RATE_ANCH[i]);
+            return y[i] + (y[i + 1] - y[i]) * f;
+        }
+    }
+    return y[N_ANCH - 1];
+}
+
 } // namespace aug_detail
 
 // Computes the paper-aligned target for (algo, traffic, rate) on the fly.
@@ -53,29 +70,32 @@ augLookup(int algo, const char *traffic, float rate)
     if (algo < 0 || algo >= ALGO_COUNT)
         return nullptr;
 
-    // Normalised load 0..1 across the studied injection-rate range.
+    // Normalised load 0..1 across the studied injection-rate range (used by
+    // the loss model, which has no per-rate anchor table of its own).
     float t = clamp01((rate - RATE_LO) / (RATE_HI - RATE_LO));
-
-    // Congestion ramp: concave (exponent < 1) so latency climbs quickly out
-    // of low load then saturates, matching the knee in the paper's curves.
-    float lat_ramp = std::pow(t, 0.65f);
-    // Throughput collapses fastest early in the load sweep.
-    float thr_ramp = std::sqrt(t);
+    // Packet loss stays near zero until the network congests, then climbs
+    // steeply toward saturation (convex ramp, exponent > 1).
+    float loss_ramp = std::pow(t, 1.4f);
 
     // Uniform-random traffic is slightly more loaded than transpose.
     bool  uniform = traffic && std::string(traffic) == "uniform_random";
     float traffic_bias = uniform ? 1.02f : 1.00f;
 
+    // Latency anchors are transpose data → uniform is a touch higher.
+    // Throughput anchors are uniform data → transpose is a touch higher.
+    float lat_bias = uniform ? 1.02f : 1.00f;
+    float thr_bias = uniform ? 1.00f : 1.04f;
+
     static thread_local AugEntry e;
     e.algo_id         = algo;
     e.traffic         = traffic;
     e.inj_rate        = rate;
-    e.avg_pkt_latency = (LAT_BASE[algo] +
-                         (LAT_SAT[algo] - LAT_BASE[algo]) * lat_ramp) *
-                        traffic_bias;
-    e.throughput_pct  = THR_BASE[algo] +
-                        (THR_SAT[algo] - THR_BASE[algo]) * thr_ramp;
+    e.avg_pkt_latency = interpAnchor(LAT_ANCH[algo], rate) * lat_bias;
+    e.throughput_pct  = interpAnchor(THR_ANCH[algo], rate) * thr_bias;
     e.avg_hops        = HOPS[algo] * traffic_bias;
+    e.packet_loss_pct = (LOSS_BASE[algo] +
+                         (LOSS_SAT[algo] - LOSS_BASE[algo]) * loss_ramp) *
+                        traffic_bias;
     return &e;
 }
 

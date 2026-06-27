@@ -25,11 +25,14 @@ class Mesh_3D(SimpleTopology):
 
         # Get topology parameters from options
         num_rows = options.mesh_rows
+        num_layers = getattr(options, "mesh_layers", 1)  # Default to 1 if not set
         num_cols = getattr(options, "mesh_cols", None)
         if num_cols is None:
-            # If mesh_cols not specified, calculate from num_cpus and mesh_rows
-            num_cols = options.num_cpus // num_rows
-        num_layers = getattr(options, "mesh_layers", 1)  # Default to 1 if not set
+            # If mesh_cols not specified, derive it from the total router count:
+            # routers = rows * cols * layers, so cols = num_cpus / (rows*layers).
+            # (Must account for layers — dividing by rows alone over-counts cols
+            #  and builds a far larger mesh than requested.)
+            num_cols = options.num_cpus // (num_rows * num_layers)
         tsv_latency = getattr(
             options, "tsv_latency", 2
         )  # Default TSV latency = 2 cycles

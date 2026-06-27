@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""plot_augmentation.py — draw latency / throughput / hops curves from the
-augmented garnet_results.json produced by the run_*.sh scripts.
+"""plot_augmentation.py — draw latency / throughput / packet-loss curves from
+the garnet_results.json produced by the run_*.sh scripts.
 
 For each traffic pattern it draws one figure with three panels
-(avg packet latency, throughput %, avg hops) versus injection rate, one line
-per routing algorithm — the same view as the paper's comparison plots.
+(avg packet latency, throughput %, packet loss %) versus injection rate, one
+line per routing algorithm — the same view as the paper's comparison plots.
 
 Usage (from repo root):
     python3 scripts/plot_augmentation.py [garnet_results.json] [--outdir results/plots]
@@ -25,15 +25,15 @@ except ImportError:
 
 # Stable colour/marker per algorithm id.
 STYLE = {
-    2: ("3D-DeepNR", "tab:green",  "o"),
-    3: ("proposed",  "tab:red",    "s"),
-    4: ("XYZ",       "tab:blue",   "^"),
-    5: ("CAQR",      "tab:orange", "D"),
+    2: ("3D-DeepNR",                   "tab:green",  "o"),
+    3: ("3D-DeepNR w/ Improved State", "tab:red",    "s"),
+    4: ("XYZ",                         "tab:blue",   "^"),
+    5: ("CAQR",                        "tab:orange", "D"),
 }
 METRICS = [
     ("average_packet_latency", "Avg Packet Latency (cycles)"),
     ("throughput_pct",         "Throughput (%)"),
-    ("average_hops",           "Avg Hops"),
+    ("packet_loss_pct",        "Packet Loss (%)"),
 ]
 
 
@@ -71,10 +71,35 @@ def plot(records, outdir):
             ax.legend(fontsize=8)
 
         fig.tight_layout(rect=[0, 0, 1, 0.95])
-        out = os.path.join(outdir, f"augmentation_{traffic}.png")
+        out = os.path.join(outdir, f"{traffic}.png")
         fig.savefig(out, dpi=120)
         plt.close(fig)
         written.append(out)
+
+    # Dedicated standalone packet-loss figure (one panel per traffic pattern).
+    traffics = sorted(grouped)
+    fig, axes = plt.subplots(1, len(traffics),
+                             figsize=(6 * len(traffics), 4.5), squeeze=False)
+    fig.suptitle("Packet Loss (%) vs injection rate", fontsize=14)
+    for ax, traffic in zip(axes[0], traffics):
+        algos = grouped[traffic]
+        for algo in sorted(algos):
+            pts = sorted(algos[algo])
+            xs = [p[0] for p in pts]
+            ys = [p[1].get("packet_loss_pct", 0.0) for p in pts]
+            name, color, marker = STYLE.get(
+                algo, (f"algo {algo}", "gray", "x"))
+            ax.plot(xs, ys, marker=marker, color=color, label=name)
+        ax.set_xlabel("Injection rate (pkts/cycle/node)")
+        ax.set_ylabel("Packet Loss (%)")
+        ax.set_title(f"{traffic} traffic")
+        ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=8)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    out = os.path.join(outdir, "packet_loss.png")
+    fig.savefig(out, dpi=120)
+    plt.close(fig)
+    written.append(out)
 
     return written
 

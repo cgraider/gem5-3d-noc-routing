@@ -30,7 +30,7 @@ fi
 # Start clean so the run only contains this test's records.
 rm -f "$OUT"
 
-RATES="0.02 0.06 0.10 0.18"
+RATES="0.02 0.04 0.06 0.08 0.10 0.16 0.18 0.20"
 TRAFFIC="uniform_random transpose"
 
 run() {
@@ -57,10 +57,11 @@ run() {
     done
 }
 
-# XYZ (4): 3D mesh, 4x4x2 = 32 nodes
-run 4 Mesh_3D --num-cpus=32 --num-dirs=32 --mesh-rows=4 --mesh-layers=2
+# XYZ (4): 3D mesh, 4x4x3 = 48 routers (num-cpus drives the router count;
+# num-dirs must be a power of 2 for gem5's directory address interleaving).
+run 4 Mesh_3D --num-cpus=48 --num-dirs=16 --mesh-rows=4 --mesh-layers=3
 
-# CAQR (5): 2D mesh, 4x4 = 16 nodes
+# CAQR (5): 2D mesh baseline, 4x4 = 16 nodes
 run 5 Mesh_XY --num-cpus=16 --num-dirs=16 --mesh-rows=4
 
 # Keep the augmented records with the rest of the results.

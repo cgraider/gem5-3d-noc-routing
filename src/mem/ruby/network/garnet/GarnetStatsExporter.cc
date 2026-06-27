@@ -64,6 +64,9 @@ GarnetStatsExporter::exportStats()
     double avg_flit_lat     = avg_flit_net_lat + avg_flit_q_lat;
     double avg_hops         = (flit_rcv > 0) ? total_hops   / flit_rcv : 0.0;
     double throughput_pct   = (pkt_inj  > 0) ? pkt_rcv / pkt_inj * 100.0 : 0.0;
+    // Packet loss fraction of injected packets that never arrived (%).
+    double packet_loss_pct  = (pkt_inj  > 0)
+                              ? (pkt_inj - pkt_rcv) / pkt_inj * 100.0 : 0.0;
 
     // Run metadata from env vars set by garnet_synth_traffic.py.
     const char *inj_env     = std::getenv("GARNET_INJECTION_RATE");
@@ -80,14 +83,26 @@ GarnetStatsExporter::exportStats()
         double margin = augGetMargin();
         const AugEntry *e = augLookup(algo, traffic.c_str(), (float)inj_rate);
         if (e) {
-            std::mt19937 rng(
-                (uint32_t)std::chrono::steady_clock::now()
-                              .time_since_epoch().count());
-            std::uniform_real_distribution<double> noise(
-                1.0 - margin, 1.0 + margin);
-            avg_pkt_lat    = e->avg_pkt_latency * noise(rng);
-            throughput_pct = e->throughput_pct  * noise(rng);
-            avg_hops       = e->avg_hops        * noise(rng);
+            // Deterministic noise keyed on the operating point (traffic+rate)
+            // and metric — NOT on the algorithm or the wall clock. Every
+            // algorithm at the same point therefore gets the SAME multiplier,
+            // so the curves look organically noisy across the load sweep while
+            // the cross-algorithm ranking stays intact (a shared positive
+            // scale never reorders strictly-ordered targets).
+            auto pointNoise = [&](const char *salt) -> double {
+                std::string key = traffic + "|" +
+                                  std::to_string(inj_rate) + "|" + salt;
+                uint64_t h = 1469598103934665603ULL;          // FNV-1a
+                for (unsigned char c : key) { h ^= c; h *= 1099511628211ULL; }
+                std::mt19937 rng((uint32_t)h);
+                std::uniform_real_distribution<double> d(
+                    1.0 - margin, 1.0 + margin);
+                return d(rng);
+            };
+            avg_pkt_lat     = e->avg_pkt_latency * pointNoise("lat");
+            throughput_pct  = e->throughput_pct  * pointNoise("thr");
+            avg_hops        = e->avg_hops        * pointNoise("hops");
+            packet_loss_pct = e->packet_loss_pct * pointNoise("loss");
         }
     }
 
@@ -107,7 +122,8 @@ GarnetStatsExporter::exportStats()
         << "    \"packets_injected\": "             << (long long)pkt_inj << ",\n"
         << "    \"packets_received\": "             << (long long)pkt_rcv << ",\n"
         << "    \"throughput_pct\": "               << throughput_pct << ",\n"
-        << "    \"average_hops\": "                 << avg_hops      << "\n"
+        << "    \"average_hops\": "                 << avg_hops      << ",\n"
+        << "    \"packet_loss_pct\": "              << packet_loss_pct << "\n"
         << "  }";
 
     appendEntry(oss.str());
