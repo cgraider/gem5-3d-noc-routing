@@ -24,7 +24,8 @@ DeepNR3D is a Deep Q-Network (DQN) based routing algorithm for 3D Network-on-Chi
 
 ```cpp
 enum RoutingAlgorithm { TABLE_ = 0, XY_ = 1, DEEPNR3D_ = 2,
-                        PROPOSED_ = 3, NUM_ROUTING_ALGORITHM_};
+                        PROPOSED_ = 3, XYZ_ = 4, CAQR_ = 5,
+                        NUM_ROUTING_ALGORITHM_};
 ```
 
 This enum is how the `--routing-algorithm=2` CLI flag maps to C++ code. The value 2 selects DeepNR3D in the switch statement inside `outportCompute()`.
@@ -64,7 +65,7 @@ Declares the method alongside `outportComputeXY()`. The `RoutingUnit` class owns
 
 ## 4. RoutingUnit.cc — dispatch
 
-**File:** `src/mem/ruby/network/garnet/RoutingUnit.cc`, lines 218–256
+**File:** `src/mem/ruby/network/garnet/RoutingUnit.cc`, lines 219–263
 
 `outportCompute()` is called by the InputUnit on every flit that needs a routing decision. It reads the algorithm from the network config and dispatches:
 
@@ -77,7 +78,7 @@ case PROPOSED_: outport = outportComputeProposed(...); break;
 }
 ```
 
-If the destination is the current router, the packet goes to a local port immediately (line 222–228) without consulting the algorithm.
+If the destination is the current router, the packet goes to a local port immediately (lines 223–229) without consulting the algorithm.
 
 ---
 
@@ -107,7 +108,7 @@ static std::map<int, bool>  packet_terminal; // packet_id → is_terminal
 
 ## 6. RoutingUnit.cc — `outportComputeDeepNR3D()`
 
-**Lines 319–834**
+**Lines 492–1017**
 
 This is the main DeepNR3D function. It is called once per routing hop per packet.
 
@@ -141,13 +142,13 @@ If the agent is not responding (10 ZMQ failures) or is choosing invalid directio
 if (!zmq_initialized) {
     zmq_ctx  = zmq_ctx_new();
     zmq_sock = zmq_socket(zmq_ctx, ZMQ_REQ);
-    zmq_setsockopt(zmq_sock, ZMQ_RCVTIMEO, &timeout, sizeof(timeout)); // 1 second
+    zmq_setsockopt(zmq_sock, ZMQ_RCVTIMEO, &timeout, sizeof(timeout)); // 10 seconds
     zmq_connect(zmq_sock, "tcp://localhost:5555");
     zmq_initialized = true;
 }
 ```
 
-Creates a ZMQ REQ socket (request-reply pattern). gem5 is the client; the Python agent is the server. The 1-second timeout ensures gem5 does not hang forever if the agent crashes.
+Creates a ZMQ REQ socket (request-reply pattern). gem5 is the client; the Python agent is the server. The 10-second timeout ensures gem5 does not hang forever if the agent crashes.
 
 A log file `deepnr_routing_log.txt` is opened here on first use (line 418).
 
@@ -309,7 +310,7 @@ The compression layer (`fc_compress`) handles variable mesh sizes — a 4×4×2 
 self.buffer = deque(maxlen=capacity)  # default 200
 ```
 
-Fixed-size circular buffer. `push()` adds `(state, action, reward, next_state, done)`. `sample(batch_size)` draws random experiences and returns them as PyTorch tensors. The small default size (200) follows the paper; the training script overrides this to 20 000.
+Fixed-size circular buffer. `push()` adds `(state, action, reward, next_state, done)`. `sample(batch_size)` draws random experiences and returns them as PyTorch tensors. The small default size (200) follows the paper specification ("limited entries").
 
 ### 8.3 DeepNR_Agent class (lines 163–363)
 
@@ -323,7 +324,7 @@ Fixed-size circular buffer. `push()` adds `(state, action, reward, next_state, d
 1. Samples a batch from the replay buffer.
 2. Computes current Q-values: `q_network(states).gather(1, actions)`.
 3. Computes target Q-values: `reward + gamma * target_network(next_states).max() * ~done`.
-4. Loss: MSE between current and target.
+4. Loss: **MSE** (`F.mse_loss`) between current and target Q-values.
 5. Gradient clipping at norm 1.0.
 6. Decays epsilon after each training step.
 7. Copies weights to `target_network` every `target_update_frequency` steps.
@@ -340,7 +341,7 @@ ZMQ REP socket bound on port 5555. Main loop in `run()` (lines 506–972):
 4. **Select action**: calls `agent.select_action()` with action mask.
 5. **Send** `{"action": N}` back to gem5.
 6. **Train** every `train_frequency` packets once the buffer has enough entries.
-7. **Auto-save** model every 500 packets.
+7. **Auto-save** model every 500 packets (configurable via `save_frequency` in the constructor; default set to 500 in `main()`).
 8. Prints status every 100 packets (epsilon, memory size, invalid action rate).
 
 ### 8.5 main() (lines 980–1223)

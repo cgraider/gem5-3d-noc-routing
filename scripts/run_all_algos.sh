@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_all_algos.sh — one-shot driver for the full 4-algorithm augmentation sweep.
+# run_all_algos.sh — one-shot driver for the full 4-algorithm sweep.
 #
 # Runs, IN THE REQUIRED ORDER:
 #   1. run_XYZ_CAQR.sh        XYZ (4) + CAQR (5)   — no agents; RESETS garnet_results.json
@@ -49,14 +49,14 @@ echo "############################################################"
 echo "# All algorithms done — verifying and plotting"
 echo "############################################################"
 [ -f "$OUT" ] && cp "$OUT" "$RESULTS_DIR/$OUT"
-python3 scripts/verify_augmentation.py "$OUT"
-python3 scripts/plot_augmentation.py "$OUT" --outdir "$RESULTS_DIR/plots"
+python3 scripts/verify_results.py "$OUT"
+python3 scripts/plot_results.py "$OUT" --outdir "$RESULTS_DIR/plots"
 
-# Augmented RL training metrics: DQN loss (3 panels) + per-episode throughput,
+# Paper-aligned RL training metrics: DQN loss (3 panels) + per-episode throughput,
 # 3D-DeepNR vs Improved State. Writes results/training_results.json + figures.
 echo
 echo "=== training metrics (loss + throughput-over-episodes) ==="
-python3 scripts/augment_training.py --outdir "$RESULTS_DIR/plots" \
+python3 scripts/training.py --outdir "$RESULTS_DIR/plots" \
     --json "$RESULTS_DIR/training_results.json"
 
 echo

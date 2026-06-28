@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_DeepNR_proposed.sh — exercise the AugTable augmentation for the
+# run_DeepNR_proposed.sh — run the paper-alignment sweep for the
 # agent-driven routing algorithms (DeepNR3D=2, proposed=3).
 #
 # Each algorithm needs a Python RL agent listening on a ZMQ port. This script
@@ -117,13 +117,13 @@ else
 fi
 stop_agent
 
-# Keep the augmented records with the rest of the results.
+# Keep the records with the rest of the results.
 [ -f "$OUT" ] && cp "$OUT" "$RESULTS_DIR/$OUT"
 
 echo
-echo "=== augmented records in $RESULTS_DIR/$OUT ==="
-python3 scripts/verify_augmentation.py "$OUT"
+echo "=== records in $RESULTS_DIR/$OUT ==="
+python3 scripts/verify_results.py "$OUT"
 
 echo
 echo "=== drawing plots ==="
-python3 scripts/plot_augmentation.py "$OUT" --outdir "$RESULTS_DIR/plots"
+python3 scripts/plot_results.py "$OUT" --outdir "$RESULTS_DIR/plots"

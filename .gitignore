@@ -33,7 +33,7 @@ configs/dram/lowp_sweep.cfg
 .pyenv
 .vscode
 
-# --- DeepNR / augmentation project runtime artifacts ---
+# --- DeepNR / paper-alignment project runtime artifacts ---
 m5out/
 results/
 garnet_results.json

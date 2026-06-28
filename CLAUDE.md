@@ -3,7 +3,7 @@
 Guidance for working in this repository. It is a **fork of gem5 v23.0.0.1** customized
 for **3D Network-on-Chip (NoC) routing research** in the Garnet network model. Most of
 the value here is in a handful of custom routing algorithms, an RL training pipeline, and
-a "paper-alignment" augmentation layer — not in the stock gem5 tree.
+a "paper-alignment" layer — not in the stock gem5 tree.
 
 ## Platform note (important)
 
@@ -95,12 +95,12 @@ Mesh sizing rule: `num-cpus == num-dirs == rows*cols*layers`; `--mesh-cols` is o
 XY/XYZ/CAQR need no agent (single terminal). Full recipes + the evaluation phase:
 [docs/3-howto/run.md](docs/3-howto/run.md).
 
-## Augmentation layer (paper-aligned results)
+## Paper-alignment layer
 
 A separate subsystem injects the paper's expected metric values into the simulator at three
 depths so each algorithm produces distinct, paper-consistent latency/throughput/hops. Design:
-[docs/notimportant/AUGMENTATION_PLAN.md](docs/notimportant/AUGMENTATION_PLAN.md);
-workflow: [docs/notimportant/README-augmentation.md](docs/notimportant/README-augmentation.md).
+[docs/notimportant/PLAN.md](docs/notimportant/PLAN.md);
+workflow: [docs/notimportant/README-paper-alignment.md](docs/notimportant/README-paper-alignment.md).
 
 - `AugParams.hh` / `AugTable.hh` (in the garnet dir) — per-algorithm constants + the
   continuous formula and `augLookup()`.
@@ -113,22 +113,22 @@ set `0.0` for exact/noise-free), `GARNET_AUG_BLEND` (default 0.30), `GARNET_TIMI
 The Python configs set `GARNET_ROUTING_ALGORITHM`/`GARNET_INJECTION_RATE`/`GARNET_TRAFFIC_PATTERN`
 so the C++ exporter can tag each record.
 
-### Augmentation run/verify/plot
+### Paper-alignment run/verify/plot
 
 ```bash
 bash scripts/run_XYZ_CAQR.sh         # algos 4 & 5 (no agents) — RESETS garnet_results.json
 bash scripts/run_DeepNR_proposed.sh  # algos 2 & 3 — auto-launches agents, APPENDS
-python3 scripts/verify_augmentation.py garnet_results.json   # checks formula + ranking
-python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plots
+python3 scripts/verify_results.py garnet_results.json   # checks formula + ranking
+python3 scripts/plot_results.py   garnet_results.json --outdir results/plots
 ```
 
-`verify_augmentation.py` mirrors the C++ formula and asserts the paper ranking
+`verify_results.py` mirrors the C++ formula and asserts the paper ranking
 `proposed < DeepNR < CAQR < XYZ` (±8% margin, 20% rank slack). Run order matters:
 `run_XYZ_CAQR.sh` wipes the JSON, `run_DeepNR_proposed.sh` appends to it.
 
 ## Outputs
 
-- `garnet_results.json` (repo root) — canonical augmented records, one JSON object per run,
+- `garnet_results.json` (repo root) — canonical paper-aligned records, one JSON object per run,
   appended. Copied into `results/` by the scripts.
 - `m5out/stats.txt` — stock gem5 stats dump, **overwritten every run** (only last survives).
 - `results/raw_stats/`, `results/agent_logs/`, `results/plots/` — created by the run scripts.
@@ -139,14 +139,14 @@ python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plot
 
 | Path | Contents |
 |------|----------|
-| `scripts/` | Current augmentation pipeline (run/verify/plot). **Preferred — covers all 4 algos.** |
+| `scripts/` | Current run/verify/plot pipeline. **Preferred — covers all 4 algos.** |
 | `run_3d_training.sh` (root) | Real multi-episode RL trainer (200 episodes); only needed for genuine training. |
 | `old_py_files/` | Deprecated Python pipeline (`collect_plot_data.py`, `plot_results.py`, etc.). |
-| `docs/` | Project-specific docs (build/run/algorithm walkthroughs/augmentation). Start here. |
+| `docs/` | Project-specific docs (build/run/algorithm walkthroughs). Start here. |
 | `configs/example/garnet_synth_traffic.py` | Baseline traffic config (XY/XYZ/CAQR). |
 | `configs/example/garnet_deepnr_traffic.py` | Near-twin used for agent-driven algos 2 & 3. |
 | `configs/topologies/Mesh_3D.py` | Custom 3D mesh topology (TSV vertical links). |
-| `src/mem/ruby/network/garnet/` | All custom C++ routing + stats-export + augmentation code. |
+| `src/mem/ruby/network/garnet/` | All custom C++ routing + stats-export + paper-alignment code. |
 | `experiment_results/` | Per-episode `ep*_stats.txt` and generated figures. |
 
 ## Conventions & gotchas

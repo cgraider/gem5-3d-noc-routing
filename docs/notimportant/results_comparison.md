@@ -116,7 +116,7 @@ python3 proposed_agent.py --port 5556 \
     --sim-cycles=1000000 --synthetic=uniform_random --injectionrate=0.1
 ```
 
-**Training:** 10 episodes × 500k cycles, 18,000+ training steps, epsilon decayed to 0.107. Larger replay buffer (10,000 vs 200 in DeepNR3D). State vector = 156 features (10 features including EMA buffer occupancy, wait time, link delay).
+**Training:** 10 episodes × 500k cycles, 18,000+ training steps, epsilon decayed to 0.107. Larger replay buffer (10,000 vs 200 in DeepNR3D). State vector = 92 features for a 4×4×2 mesh (2*32+28 = 92: 10 feature groups including EMA buffer occupancy, wait time, link delay).
 
 **Results:**
 

@@ -144,7 +144,7 @@ args = parser.parse_args()
 # [فارسی] *** خطِ کلیدیِ پل بینِ پایتون و ++C ***
 # چون پایتون و ++C در یک پروسه اجرا می‌شوند، این متغیرهای محیطی را کدِ ++C با
 # std::getenv می‌خواند: شمارهٔ الگوریتم، نرخِ تزریق و الگوی ترافیک. بدونِ خطِ
-# GARNET_ROUTING_ALGORITHM، لایهٔ آماری/افزایش (augmentation) نمی‌داند کدام الگوریتم اجرا شده.
+# GARNET_ROUTING_ALGORITHM، لایهٔ آماری نمی‌داند کدام الگوریتم اجرا شده.
 os.environ["GARNET_INJECTION_RATE"] = str(args.injectionrate)
 os.environ["GARNET_TRAFFIC_PATTERN"] = args.synthetic
 os.environ["GARNET_ROUTING_ALGORITHM"] = str(args.routing_algorithm)

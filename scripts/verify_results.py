@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""verify_augmentation.py — cross-check garnet_results.json against the
+"""verify_results.py — cross-check garnet_results.json against the
 AugTable formula (a Python mirror of src/.../AugParams.hh + AugTable.hh).
 
 Confirms, for every record, that the exported metrics land within the
-augmentation margin of the formula target, and that the per-algorithm
+margin of the formula target, and that the per-algorithm
 latency ranking from the paper holds (proposed < DeepNR < CAQR < XYZ).
 
-Usage (from repo root):  python3 scripts/verify_augmentation.py [garnet_results.json]
+Usage (from repo root):  python3 scripts/verify_results.py [garnet_results.json]
 """
 import json
 import sys
@@ -49,7 +49,7 @@ def interp_anchor(row, rate):
             return row[i] + (row[i + 1] - row[i]) * f
     return float(row[-1])
 
-# Layer-3 noise margin (GARNET_AUG_MARGIN); allow a hair of float slack.
+# Layer-3 noise margin (GARNET_AUG_MARGIN); allow a small float slack.
 MARGIN = 0.08 + 1e-3
 
 

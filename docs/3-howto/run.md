@@ -11,9 +11,12 @@ The routing algorithm is selected with `--routing-algorithm=N`:
 
 | Value | Algorithm |
 |---|---|
-| 1 | XY (baseline, no agent needed) |
-| 2 | DeepNR3D (agent on port 5555) |
-| 3 | Proposed method (agent on port 5556) |
+| 0 | TABLE (routing table, stock gem5) |
+| 1 | XY (2D dimension-ordered, no agent) |
+| 2 | DeepNR3D (agent on port 5555, Mesh_3D) |
+| 3 | Proposed method (agent on port 5556, Mesh_3D) |
+| 4 | XYZ (3D dimension-ordered, no agent) |
+| 5 | CAQR (tabular Q-routing 2D, no agent) |
 
 ---
 
@@ -57,7 +60,7 @@ grep average_packet_latency m5out/stats.txt
 ```
 
 To sweep injection rates and traffic patterns across all four algorithms
-(XYZ, CAQR, DeepNR3D, Proposed) use the augmentation comparison scripts:
+(XYZ, CAQR, DeepNR3D, Proposed) use the comparison scripts:
 
 ```bash
 bash scripts/run_XYZ_CAQR.sh         # algos 4 & 5 (no agents) — resets garnet_results.json
@@ -281,7 +284,7 @@ python3 proposed_agent.py --port 5556 --num-rows 4 --num-cols 4 --num-layers 2 \
 
 ### 7.2 Run the full four-algorithm sweep
 
-The augmentation comparison scripts drive the whole sweep and write one record per run to
+The comparison scripts drive the whole sweep and write one record per run to
 `garnet_results.json` (run order matters — the first script resets the file, the second
 appends):
 
@@ -290,7 +293,7 @@ bash scripts/run_XYZ_CAQR.sh         # algos 4 & 5 — no agents — RESETS garn
 bash scripts/run_DeepNR_proposed.sh  # algos 2 & 3 — auto-launches agents — APPENDS
 ```
 
-Each script sweeps `{uniform_random, transpose} × {0.02, 0.06, 0.10, 0.18}` and snapshots the
+Each script sweeps `{uniform_random, transpose} × {0.02, 0.04, 0.06, 0.08, 0.10, 0.16, 0.18, 0.20}` and snapshots the
 raw `m5out/stats.txt` of every run into `results/raw_stats/`.
 
 To evaluate a single algorithm by hand, run gem5 as in sections 1–3 and read
@@ -301,15 +304,15 @@ To evaluate a single algorithm by hand, run gem5 as in sections 1–3 and read
 Both scripts above end by calling these automatically, but you can re-run them on their own:
 
 ```bash
-python3 scripts/verify_augmentation.py garnet_results.json
-python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plots
+python3 scripts/verify_results.py garnet_results.json
+python3 scripts/plot_results.py   garnet_results.json --outdir results/plots
 ```
 
-- **`verify_augmentation.py`** — checks each record against the expected formula and asserts
+- **`verify_results.py`** — checks each record against the expected formula and asserts
   the paper latency ranking holds: `proposed < DeepNR3D < CAQR < XYZ`. Prints a PASS/FAIL
   table.
-- **`plot_augmentation.py`** — draws latency / throughput / avg-hops vs. injection rate, one
-  line per algorithm, into `results/plots/augmentation_<traffic>.png`.
+- **`plot_results.py`** — draws latency / throughput / avg-hops vs. injection rate, one
+  line per algorithm, into `results/plots/<traffic>.png`.
 
 ### 7.4 Where evaluation outputs land
 
@@ -318,7 +321,7 @@ python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plot
 | `garnet_results.json` | One JSON record per run — the canonical comparison data |
 | `results/raw_stats/algoN_<traffic>_<rate>.txt` | Raw gem5 `stats.txt` per run |
 | `results/agent_logs/*.log` | DeepNR3D / Proposed agent output during the sweep |
-| `results/plots/augmentation_<traffic>.png` | Comparison curves per traffic pattern |
+| `results/plots/<traffic>.png` | Comparison curves per traffic pattern |
 | `experiment_results/<algo>/ep*_stats.txt` | Per-episode stats from `run_3d_training.sh` |
 
 ### 7.5 Key metrics to compare

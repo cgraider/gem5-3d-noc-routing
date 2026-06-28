@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""augment_training.py — paper-aligned augmentation for the RL *training*
+"""training.py — paper-aligned curves for the RL *training*
 metrics (DQN training loss and per-episode throughput).
 
 The curves are anchored to the paper's measured points (Table 2 for training
@@ -17,8 +17,8 @@ Two comparisons, both 3D-DeepNR vs 3D-DeepNR with Improved State (= proposed):
                        (Table 3, low-range learning curve).
 
 Usage (from repo root):
-    python3 scripts/augment_training.py [--outdir results/plots]
-                                        [--json results/training_results.json]
+    python3 scripts/training.py [--outdir results/plots]
+                                [--json results/training_results.json]
 """
 import argparse
 import json

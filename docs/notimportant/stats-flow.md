@@ -31,7 +31,7 @@ m_net_ptr->increment_injected_flits(vnet);     // flits_injected counter (per fl
 It also stamps each flit with `curTick()` as its birth time, and records the
 time it spent waiting in the source message buffer (`set_src_delay`).
 
-### 2. Latency measurement — `NetworkInterface.cc` line 154–177 (`incrementStats`)
+### 2. Latency measurement — `NetworkInterface.cc` line 156–201 (`incrementStats`)
 
 When a flit **arrives at the destination NI**, gem5 calls `incrementStats(flit*)`:
 
@@ -100,7 +100,7 @@ Packet injected at source NI
 Flit traverses routers  (Router.cc → RoutingUnit → OutputUnit → crossbar)
 
 Flit arrives at destination NI
-  └─ NetworkInterface.cc:154  incrementStats()
+  └─ NetworkInterface.cc:156  incrementStats()
        ├─ measures network_delay and queueing_delay from flit timestamps
        ├─ calls increment_flit_network_latency / increment_flit_queueing_latency
        └─ on tail flit: increment_packet_network_latency / increment_packet_queueing_latency
@@ -133,52 +133,40 @@ These lines appear near the **last ~20 lines** of every stats file:
 
 ---
 
-## File Roles
+## File Roles (current pipeline)
 
 | File | What it contains | Who writes it |
 |---|---|---|
-| `experiment_results/deepnr3d/ep*_stats.txt` | Real gem5 stats per episode (baseline) | gem5 engine |
-| `experiment_results/proposed/ep*_stats.txt` | Real gem5 stats per episode (proposed method) | gem5 engine |
-| `deepnr_metrics.json` | Runtime metrics (currently uses random/fake values) | `collect_deepnr_metrics.py` |
-| `plot_data.json` | Chart values used by `plot_results.py` (currently mock) | Manually / future parser |
-| `deepnr_metrics_plot.png` | Auto-generated plots from runtime metrics | `deepnr_metrics.py` |
+| `garnet_results.json` (repo root) | One JSON record per run — canonical comparison data | `GarnetStatsExporter.cc` |
+| `results/raw_stats/algoN_<traffic>_<rate>.txt` | Raw `m5out/stats.txt` snapshot per run | `run_XYZ_CAQR.sh` / `run_DeepNR_proposed.sh` |
+| `results/agent_logs/*.log` | DeepNR3D / Proposed agent stdout during the sweep | same scripts |
+| `results/plots/<traffic>.png` | Latency / throughput / hops curves per traffic pattern | `scripts/plot_results.py` |
+| `experiment_results/<algo>/ep*_stats.txt` | Per-episode raw stats from `run_3d_training.sh` | gem5 engine |
 
 ---
 
-## Critical Gap
-
-`collect_deepnr_metrics.py` does **not** read the `ep*_stats.txt` files.
-It currently fills `deepnr_metrics.json` with `numpy` random numbers.
-
-Nothing automatically reads the real gem5 output and feeds it into `plot_data.json`.
-
----
-
-## What Needs to Be Built
-
-A parser script that:
-1. Loops over all `ep*_stats.txt` files in both `deepnr3d/` and `proposed/`
-2. Extracts `packet_network_latency` and `ext_in_link_utilization` from each file
-3. Averages or aggregates across episodes per injection rate
-4. Writes the real values into `plot_data.json`
-5. `plot_results.py` then reads `plot_data.json` and regenerates all 5 figures
-
----
-
-## How plot_results.py Uses the Data
+## How the current plotting pipeline works
 
 ```
-plot_data.json  →  plot_results.py  →  experiment_results/*.png
+gem5 run
+  └─ GarnetStatsExporter.cc → garnet_results.json  (one record appended per run)
+
+scripts/run_XYZ_CAQR.sh + run_DeepNR_proposed.sh
+  └─ drive gem5 over injection-rate × traffic sweep
+  └─ copy each m5out/stats.txt → results/raw_stats/
+
+scripts/plot_results.py garnet_results.json --outdir results/plots
+  └─ reads garnet_results.json
+  └─ draws latency / throughput / avg-hops vs injection rate
+  └─ one PNG per traffic pattern
 ```
 
-- `latency_transpose`  → `latency_transpose.png`
-- `latency_uniform`    → `latency_uniform.png`
-- `throughput_uniform` → `throughput_uniform.png`
-- `training_loss`      → `training_loss.png`
-- `throughput_training`→ `throughput_training.png`
-
-To replace mock data with real values: update the arrays in `plot_data.json`, then run:
+To re-plot after a run:
 
 ```bash
-python plot_results.py
+python3 scripts/plot_results.py garnet_results.json --outdir results/plots
 ```
+
+> **Note:** `old_py_files/` (repo root) contains the deprecated pipeline
+> (`collect_plot_data.py`, `plot_results.py`, `deepnr_metrics.json`, `plot_data.json`).
+> Those files used mock/random data and are no longer used.

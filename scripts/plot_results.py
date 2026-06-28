@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""plot_augmentation.py — draw latency / throughput / packet-loss curves from
+"""plot_results.py — draw latency / throughput / packet-loss curves from
 the garnet_results.json produced by the run_*.sh scripts.
 
 For each traffic pattern it draws one figure with three panels
@@ -7,7 +7,7 @@ For each traffic pattern it draws one figure with three panels
 line per routing algorithm — the same view as the paper's comparison plots.
 
 Usage (from repo root):
-    python3 scripts/plot_augmentation.py [garnet_results.json] [--outdir results/plots]
+    python3 scripts/plot_results.py [garnet_results.json] [--outdir results/plots]
 """
 import argparse
 import json

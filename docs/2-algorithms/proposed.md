@@ -39,7 +39,8 @@ The Proposed method is an enhanced DQN-based 3D NoC routing algorithm. It shares
 
 ```cpp
 enum RoutingAlgorithm { TABLE_ = 0, XY_ = 1, DEEPNR3D_ = 2,
-                        PROPOSED_ = 3, NUM_ROUTING_ALGORITHM_};
+                        PROPOSED_ = 3, XYZ_ = 4, CAQR_ = 5,
+                        NUM_ROUTING_ALGORITHM_};
 ```
 
 Value 3 selects the Proposed method via `--routing-algorithm=3`.
@@ -63,7 +64,7 @@ Declared alongside `outportComputeDeepNR3D()` in the same class.
 
 ## 3. RoutingUnit.cc — dispatch
 
-**File:** `src/mem/ruby/network/garnet/RoutingUnit.cc`, lines 246–248
+**File:** `src/mem/ruby/network/garnet/RoutingUnit.cc`, lines 247–249
 
 ```cpp
 case PROPOSED_:
@@ -77,9 +78,9 @@ Selected by the same `switch` in `outportCompute()` that dispatches DeepNR3D.
 
 ## 4. RoutingUnit.cc — `outportComputeProposed()`
 
-**Lines 845–1142**
+**Lines 1019–1338**
 
-### 4.1 Static state (lines 849–865)
+### 4.1 Static state (lines 1028–1048)
 
 ```cpp
 static void *zmq_ctx  = nullptr;
@@ -96,7 +97,7 @@ static const float EMA_ALPHA = 0.1f;
 
 The `ema_occ` map is the most important addition over DeepNR3D. It maintains a per-router exponential moving average of buffer occupancy for each of the 6 directions, updated on every routing call for that router. `EMA_ALPHA = 0.1` gives slow-changing, smoothed estimates.
 
-### 4.2 ZMQ initialisation (lines 873–901)
+### 4.2 ZMQ initialisation (lines 1059–1087)
 
 Identical pattern to DeepNR3D but connects to port **5556**:
 
@@ -106,7 +107,7 @@ zmq_connect(zmq_sock, "tcp://localhost:5556");
 
 Log file is `proposed_routing_log.txt`.
 
-### 4.3 Network dimensions (lines 929–938)
+### 4.3 Network dimensions (lines 1116–1125)
 
 ```cpp
 int num_layers = (num_rows * num_cols > 0)
@@ -118,7 +119,7 @@ int clock_period_ticks = (int)m_router->get_net_ptr()->clockPeriod();
 
 `clock_period_ticks` is needed for f6 (packet wait time in cycles).
 
-### 4.4 Per-direction buffer info (lines 962–985)
+### 4.4 Per-direction buffer info (lines 1143–1171)
 
 ```cpp
 std::array<float, 6> buf_free{}; // free buffer ratio  (used in f5)
@@ -138,7 +139,7 @@ for (int d = 0; d < 6; d++)
 
 The EMA update happens every time this router makes a routing decision, so it accumulates history across all packets passing through.
 
-### 4.5 State vector — 10 features (lines 987–1051)
+### 4.5 State vector — 10 features (lines 1173–1233)
 
 State size = `2 * num_routers + 28`. The 28 scalar features come from 10 feature groups:
 
@@ -186,7 +187,7 @@ sv.push_back(min(1.0f, f10));
 
 Scales Manhattan distance by `(1 + average congestion)`. When the network is congested, this grows, encouraging the agent to prefer shorter or less congested paths.
 
-### 4.6 Available-actions mask (lines 1053–1063)
+### 4.6 Available-actions mask (lines 1239–1249)
 
 ```cpp
 std::vector<bool> avail(6, true);
@@ -202,7 +203,7 @@ for (int d = 0; d < 6; d++)
 
 Same boundary and buffer checks as DeepNR3D.
 
-### 4.7 Sending state and receiving action (lines 1065–1103)
+### 4.7 Sending state and receiving action (lines 1251–1285)
 
 Same JSON protocol as DeepNR3D:
 
@@ -215,7 +216,7 @@ zmq_recv(zmq_sock, buf, sizeof(buf) - 1, 0);
 
 The only difference is the port (5556) and the larger state vector.
 
-### 4.8 Validation and termination (lines 1106–1120)
+### 4.8 Validation and termination (lines 1289–1302)
 
 ```cpp
 bool bad_action = (action < 0 || action >= 6 || !avail[action]);
@@ -229,7 +230,7 @@ if (bad_action) {
 
 Same −10 penalty and termination logic as DeepNR3D.
 
-### 4.9 Terminal flag and port mapping (lines 1122–1137)
+### 4.9 Terminal flag and port mapping (lines 1304–1329)
 
 ```cpp
 static const int delta[6][3] = {{0,-1,0},{1,0,0},{0,1,0},{-1,0,0},{0,0,1},{0,0,-1}};

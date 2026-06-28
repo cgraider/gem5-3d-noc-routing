@@ -272,7 +272,7 @@ complete before being sent to the agent.
 
 **File:** `src/mem/ruby/network/garnet/NetworkInterface.cc`
 
-**Function:** `NetworkInterface::incrementStats()` (line 154)
+**Function:** `NetworkInterface::incrementStats()` (line 156)
 
 When the tail flit is dequeued at the destination NI:
 
@@ -378,8 +378,8 @@ Model is periodically saved to `deepnr_model.pth` (every 1000 packets).
 | `deepnr_agent.py` | Python DQN agent: ZMQ server, epsilon-greedy policy, replay, training |
 | `deepnr_routing_log.txt` | Per-packet log: state, action, reward written by RoutingUnit |
 | `experiment_results/deepnr3d/ep*_stats.txt` | gem5 stats output per episode |
-| `plot_data.json` | Chart values (currently mock; replace with parsed stats) |
-| `plot_results.py` | Reads plot_data.json and generates all 5 figures |
+| `garnet_results.json` | Paper-aligned JSON records written by GarnetStatsExporter (one per run) |
+| `scripts/plot_results.py` | Reads garnet_results.json and generates comparison plots |
 
 ---
 

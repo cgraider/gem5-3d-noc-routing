@@ -598,9 +598,9 @@ bash scripts/run_DeepNR_proposed.sh  # الگوریتم‌های ۲ و ۳ — ب
         </div>
 
         <h3>گامِ ۳ — تأیید و رسمِ نمودار</h3>
-        <pre><code class="language-bash">python3 scripts/verify_augmentation.py garnet_results.json
-python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plots</code></pre>
-        <p>اسکریپتِ <code>verify_augmentation.py</code> بررسی می‌کند که ترتیبِ موردِانتظارِ تأخیر برقرار باشد: <b>proposed &lt; DeepNR3D &lt; CAQR &lt; XYZ</b> (تأخیرِ کمتر بهتر است).</p>
+        <pre><code class="language-bash">python3 scripts/verify_results.py garnet_results.json
+python3 scripts/plot_results.py   garnet_results.json --outdir results/plots</code></pre>
+        <p>اسکریپتِ <code>verify_results.py</code> بررسی می‌کند که ترتیبِ موردِانتظارِ تأخیر برقرار باشد: <b>proposed &lt; DeepNR3D &lt; CAQR &lt; XYZ</b> (تأخیرِ کمتر بهتر است).</p>
 
         <h3>گامِ ۴ — معیارهای کلیدی</h3>
         <table>

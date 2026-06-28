@@ -127,13 +127,13 @@ bash scripts/run_DeepNR_proposed.sh  # الگوریتم‌های ۲ و ۳ — خ
 ## گامِ ۳) تأیید و رسمِ مقایسه
 
 ```bash
-python3 scripts/verify_augmentation.py garnet_results.json
-python3 scripts/plot_augmentation.py   garnet_results.json --outdir results/plots
+python3 scripts/verify_results.py garnet_results.json
+python3 scripts/plot_results.py   garnet_results.json --outdir results/plots
 ```
 
-- **`verify_augmentation.py`** — چک می‌کند رتبه‌بندیِ موردِانتظار برقرار باشد:
+- **`verify_results.py`** — چک می‌کند رتبه‌بندیِ موردِانتظار برقرار باشد:
   `proposed < DeepNR3D < CAQR < XYZ` (تأخیرِ کمتر بهتر). جدولِ PASS/FAIL چاپ می‌کند.
-- **`plot_augmentation.py`** — نمودارِ تأخیر / توان‌عملیاتی / تعدادِ پرش برحسبِ نرخِ تزریق
+- **`plot_results.py`** — نمودارِ تأخیر / توان‌عملیاتی / تعدادِ پرش برحسبِ نرخِ تزریق
   می‌کشد، یک خط برای هر الگوریتم، در `results/plots/`.
 
 ## گامِ ۴) خروجی‌ها کجا می‌روند

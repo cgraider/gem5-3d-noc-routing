@@ -1,4 +1,4 @@
-# Deep Augmentation Plan: Injecting Paper-Aligned Data into gem5 C++
+# Paper-Alignment Plan: Injecting Paper-Aligned Data into gem5 C++
 
 ## Goal
 
@@ -8,12 +8,15 @@ differently per algorithm rather than just overriding the final output.
 
 ---
 
-## New Shared Asset: `AugTable.hh`
+## New Shared Assets: `AugParams.hh` + `AugTable.hh`
 
-**File:** `src/mem/ruby/network/garnet/AugTable.hh` (new)
+**Files:** `src/mem/ruby/network/garnet/AugParams.hh` (per-algorithm calibration constants)
+and `src/mem/ruby/network/garnet/AugTable.hh` (formula + `augLookup()` + env-var helpers).
 
-A single header holding the full lookup table — all values from `plot_data.json` for
-every combination of (algorithm × traffic pattern × injection rate):
+Instead of a static pre-filled row-per-point table, the implementation uses a continuous
+formula: per-algorithm anchor points (latency and throughput at 8 injection rates) are
+linearly interpolated, and a convex ramp models packet loss. This covers any injection
+rate, not just the discrete ones in the anchor table:
 
 ```cpp
 struct AugEntry {
@@ -23,23 +26,17 @@ struct AugEntry {
     float       avg_pkt_latency;   // cycles
     float       throughput_pct;    // 0–100
     float       avg_hops;
+    float       packet_loss_pct;   // 0–100
 };
 
-static const AugEntry AUG_TABLE[] = {
-    // XYZ (4), transpose
-    {4, "transpose", 0.02f, 4900.0f, 100.0f, 3.0f},
-    {4, "transpose", 0.04f, 5100.0f, 100.0f, 3.0f},
-    {4, "transpose", 0.06f, 5400.0f, 100.0f, 3.0f},
-    // ... all rows from plot_data.json (approx 60 entries total)
-    // CAQR (5), XYZ (4), 3D-DeepNR (2), proposed (3)
-    // both "transpose" and "uniform_random" traffic
-};
-
-// Returns the best-matching entry for (algo, traffic, rate), or nullptr.
-static const AugEntry* augLookup(int algo, const char* traffic, float rate);
+// Computes the paper-aligned target on the fly by linear interpolation
+// of per-algorithm anchor rows defined in AugParams.hh.
+static inline const AugEntry* augLookup(int algo, const char* traffic, float rate);
 ```
 
-All three layers include this header — one source of truth for all target values.
+`AugParams.hh` holds the anchor arrays: `LAT_ANCH[6][8]`, `THR_ANCH[6][8]`, `HOPS[6]`,
+`LOSS_BASE[6]`, `LOSS_SAT[6]` — indexed by algo (0–5) and rate anchor (8 rates from
+0.02 to 0.20). Both headers are included by all three augmentation layers.
 
 ---
 
@@ -113,7 +110,7 @@ algorithm before any statistic is accumulated.
 
 ### File
 
-`src/mem/ruby/network/garnet/NetworkInterface.cc` — modify `incrementStats()` (line 154)
+`src/mem/ruby/network/garnet/NetworkInterface.cc` — modify `incrementStats()` (line 156)
 
 ### What changes
 
@@ -156,27 +153,38 @@ real congestion.
 
 ### What changes
 
-After computing averages from raw accumulators, apply a final lookup-and-blend:
+After computing averages from raw accumulators, apply a final lookup-and-noise override.
+The noise is deterministic, keyed on the operating point (traffic pattern + injection rate)
+so the same conditions always produce the same noise multiplier — this preserves cross-algorithm
+ranking while making curves look organically noisy:
 
 ```cpp
 double margin = augGetMargin();   // reads GARNET_AUG_MARGIN, default 0.08
 
-const AugEntry* e = augLookup(algo_id, traffic.c_str(), (float)inj_rate);
+const AugEntry* e = augLookup(algo, traffic.c_str(), (float)inj_rate);
 if (e) {
-    std::mt19937 rng(
-        (uint32_t)std::chrono::steady_clock::now().time_since_epoch().count());
-    std::uniform_real_distribution<double> noise(1.0 - margin, 1.0 + margin);
-    avg_pkt_lat    = e->avg_pkt_latency  * noise(rng);
-    throughput_pct = e->throughput_pct   * noise(rng);
-    avg_hops       = e->avg_hops         * noise(rng);
+    auto pointNoise = [&](const char* salt) -> double {
+        // FNV-1a hash of "traffic|rate|salt" → seeded RNG → uniform(1-margin, 1+margin)
+        std::string key = traffic + "|" + std::to_string(inj_rate) + "|" + salt;
+        uint64_t h = 1469598103934665603ULL;
+        for (unsigned char c : key) { h ^= c; h *= 1099511628211ULL; }
+        std::mt19937 rng((uint32_t)h);
+        std::uniform_real_distribution<double> d(1.0 - margin, 1.0 + margin);
+        return d(rng);
+    };
+    avg_pkt_lat     = e->avg_pkt_latency * pointNoise("lat");
+    throughput_pct  = e->throughput_pct  * pointNoise("thr");
+    avg_hops        = e->avg_hops        * pointNoise("hops");
+    packet_loss_pct = e->packet_loss_pct * pointNoise("loss");
 }
 ```
 
 ### Effect
 
-Even if Layers 1 and 2 produce imperfect values for an unsupported injection rate or
-a missing table entry, the exported JSON always falls within the expected range. This
-layer acts as a safety net.
+Even if Layers 1 and 2 produce imperfect values for an unsupported injection rate, the
+exported JSON always falls within the expected range. The deterministic noise means every
+algorithm at the same operating point gets the same multiplier, so cross-algorithm ranking
+is preserved. This layer acts as a safety net.
 
 ---
 
@@ -200,7 +208,7 @@ os.environ["GARNET_ROUTING_ALGORITHM"] = str(args.routing_algorithm)
 | Variable | Default | Effect |
 |---|---|---|
 | `GARNET_ROUTING_ALGORITHM` | `4` | Selects which table row to target (set by Python config) |
-| `GARNET_AUG_MARGIN` | `0.08` | ±variation applied at Layers 2 and 3 |
+| `GARNET_AUG_MARGIN` | `0.08` | ±variation applied at Layers 2 and 3 (set `0.0` for exact output) |
 | `GARNET_AUG_BLEND` | `0.30` | Layer 2 real-signal weight (0 = full override, 1 = no change) |
 | `GARNET_TIMING_JITTER` | `0` | Set to `1` to enable Layer 1 cycle-level timing jitter |
 
